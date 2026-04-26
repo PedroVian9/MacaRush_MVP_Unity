@@ -70,8 +70,17 @@ Cada jogador so pega a sua propria alca. A stamina cai ao correr e ao carregar a
 - `MacaStretcher`: peso, centro de massa, dano por impacto, dano por inclinacao, derrota por tombamento e queda.
 - `PatientHealth`: vida, estados `Stable`, `Injured`, `Critical`, `Dying`, `Dead` e cor simples do paciente.
 - `GameManager`: tempo de partida, objetivo, vitoria, derrota e reinicio.
+- `GameManager`: tempo de partida, objetivo, vitoria, derrota, reinicio e multiplicador de dificuldade por progresso.
 - `SimpleHud`: vida, estado, tempo, objetivo, alerta critico e mensagens finais.
-- `RandomEventDirector`: luz piscando, porta travando, paciente se mexendo, obstaculo atravessando, chao escorregadio e sirene visual.
+- `RandomEventDirector`: luz piscando, porta travando, paciente se mexendo, obstaculo atravessando, chao escorregadio e sirene visual com frequencia/intensidade crescentes.
+
+## Dificuldade crescente
+
+- A partida agora escala dificuldade automaticamente com o tempo (`DifficultyMultiplier` no `GameManager`).
+- Dreno passivo do paciente aumenta ao longo da partida.
+- Dano por impacto/inclinacao da maca cresce com a pressao da partida.
+- Eventos aleatorios ficam mais frequentes e mais fortes.
+- O HUD mostra a pressao atual (`Baixa`, `Media`, `Alta`) e o multiplicador (`x`).
 
 ## Condicoes de jogo
 

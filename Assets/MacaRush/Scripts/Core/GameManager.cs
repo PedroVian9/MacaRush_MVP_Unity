@@ -21,6 +21,7 @@ namespace MacaRush
         [Header("Rules")]
         [SerializeField] private float maxMatchTime = 240f;
         [SerializeField] private string objectiveText = "Leve a maca ate a ambulancia.";
+        [SerializeField] private AnimationCurve difficultyByProgress = AnimationCurve.EaseInOut(0f, 1f, 1f, 1.75f);
 
         [Header("Runtime")]
         [SerializeField] private GameState state = GameState.Playing;
@@ -35,6 +36,10 @@ namespace MacaRush
         public string EndReason => endReason;
         public bool IsPlaying => state == GameState.Playing;
         public MacaStretcher Stretcher => stretcher;
+        public float MatchProgress01 => maxMatchTime <= 0f ? 0f : Mathf.Clamp01(elapsedTime / maxMatchTime);
+        public float DifficultyMultiplier => difficultyByProgress != null
+            ? Mathf.Max(0.2f, difficultyByProgress.Evaluate(MatchProgress01))
+            : 1f;
 
         private void Awake()
         {

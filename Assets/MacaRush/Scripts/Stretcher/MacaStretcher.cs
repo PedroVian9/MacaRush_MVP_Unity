@@ -20,10 +20,12 @@ namespace MacaRush
         [SerializeField] private float minimumImpactVelocity = 3.2f;
         [SerializeField] private float impactDamageMultiplier = 7.5f;
         [SerializeField] private float eventImpactCooldown = 0.45f;
+        [SerializeField] private float impactDifficultyInfluence = 0.6f;
 
         [Header("Tilt Damage")]
         [SerializeField] private float dangerousTiltAngle = 35f;
         [SerializeField] private float tiltDamagePerSecond = 8f;
+        [SerializeField] private float tiltDifficultyInfluence = 0.7f;
         [SerializeField] private float flippedAngle = 82f;
         [SerializeField] private float flippedSecondsToDefeat = 2.4f;
         [SerializeField] private float patientFallTiltAngle = 68f;
@@ -83,7 +85,9 @@ namespace MacaRush
             var impactVelocity = collision.relativeVelocity.magnitude;
             if (impactVelocity < minimumImpactVelocity) return;
 
-            var damage = (impactVelocity - minimumImpactVelocity) * impactDamageMultiplier;
+            var difficulty = GetDifficultyMultiplier();
+            var scaledImpact = impactDamageMultiplier * Mathf.Lerp(1f, difficulty, impactDifficultyInfluence);
+            var damage = (impactVelocity - minimumImpactVelocity) * scaledImpact;
             patientHealth.ApplyDamage(damage, PatientDamageSource.Impact);
             impactCooldownTimer = eventImpactCooldown;
         }
@@ -134,7 +138,9 @@ namespace MacaRush
             if (tilt >= dangerousTiltAngle)
             {
                 var severity = Mathf.InverseLerp(dangerousTiltAngle, flippedAngle, tilt);
-                patientHealth.ApplyDamage(tiltDamagePerSecond * Mathf.Lerp(0.65f, 1.55f, severity) * Time.deltaTime, PatientDamageSource.Tilt);
+                var difficulty = GetDifficultyMultiplier();
+                var scaledTilt = tiltDamagePerSecond * Mathf.Lerp(1f, difficulty, tiltDifficultyInfluence);
+                patientHealth.ApplyDamage(scaledTilt * Mathf.Lerp(0.65f, 1.55f, severity) * Time.deltaTime, PatientDamageSource.Tilt);
             }
         }
 
@@ -187,6 +193,11 @@ namespace MacaRush
         private static bool IsPlaying()
         {
             return GameManager.Instance == null || GameManager.Instance.State == GameState.Playing;
+        }
+
+        private static float GetDifficultyMultiplier()
+        {
+            return GameManager.Instance != null ? GameManager.Instance.DifficultyMultiplier : 1f;
         }
 
         private static void DefeatIfPossible(string reason)

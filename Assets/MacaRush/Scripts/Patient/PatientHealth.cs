@@ -26,6 +26,7 @@ namespace MacaRush
         [Header("Health")]
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float passiveDrainPerSecond = 1.2f;
+        [SerializeField] private float passiveDrainDifficultyInfluence = 0.85f;
 
         [Header("State Thresholds")]
         [SerializeField] private float injuredThreshold = 76f;
@@ -126,7 +127,9 @@ namespace MacaRush
         {
             if (GameManager.Instance != null && GameManager.Instance.State != GameState.Playing) return;
 
-            ApplyDamage(passiveDrainPerSecond * Time.deltaTime, PatientDamageSource.Time);
+            var difficulty = GameManager.Instance != null ? GameManager.Instance.DifficultyMultiplier : 1f;
+            var passiveDrain = passiveDrainPerSecond * Mathf.Lerp(1f, difficulty, passiveDrainDifficultyInfluence);
+            ApplyDamage(passiveDrain * Time.deltaTime, PatientDamageSource.Time);
             UpdateVisuals(false);
         }
 

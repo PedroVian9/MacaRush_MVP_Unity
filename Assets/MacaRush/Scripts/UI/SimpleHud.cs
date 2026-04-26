@@ -26,12 +26,15 @@ namespace MacaRush
             var time = manager != null ? manager.ElapsedTime : 0f;
             var remaining = manager != null ? manager.RemainingTime : 0f;
             var objective = manager != null ? manager.ObjectiveText : "Leve a maca ate a ambulancia.";
+            var difficulty = manager != null ? manager.DifficultyMultiplier : 1f;
+            var pressureLabel = difficulty < 1.2f ? "Baixa" : (difficulty < 1.5f ? "Media" : "Alta");
 
             statusText.color = IsPatientCritical() ? criticalTextColor : normalTextColor;
             statusText.text =
                 $"Paciente: {patient.StateLabel} ({patient.Health:0}/{patient.MaxHealth:0})\n" +
                 $"Vida: {patient.Health01 * 100f:0}%\n" +
                 $"Tempo: {FormatTime(time)} / resta {FormatTime(remaining)}\n" +
+                $"Pressao: {pressureLabel} ({difficulty:0.00}x)\n" +
                 $"Objetivo: {objective}";
 
             if (healthFill != null)

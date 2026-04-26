@@ -11,6 +11,8 @@ namespace MacaRush
         [SerializeField] private float firstEventDelay = 10f;
         [SerializeField] private float minDelay = 9f;
         [SerializeField] private float maxDelay = 18f;
+        [SerializeField] private float minDelayAtMaxDifficulty = 4.5f;
+        [SerializeField] private float maxDelayAtMaxDifficulty = 8.5f;
 
         [Header("Event Toggles")]
         [SerializeField] private bool flickerLights = true;
@@ -34,6 +36,7 @@ namespace MacaRush
         [SerializeField] private float patientJostleImpulse = 8f;
         [SerializeField] private float patientJostleDamage = 4f;
         [SerializeField] private float doorLockDuration = 3f;
+        [SerializeField] private float eventIntensityInfluence = 0.85f;
 
         private float[] originalLightIntensities;
 
@@ -76,7 +79,8 @@ namespace MacaRush
                     TriggerRandomEvent();
                 }
 
-                yield return new WaitForSeconds(Random.Range(minDelay, maxDelay));
+                var delayRange = GetScaledDelayRange();
+                yield return new WaitForSeconds(Random.Range(delayRange.x, delayRange.y));
             }
         }
 
@@ -95,32 +99,34 @@ namespace MacaRush
             {
                 case 0:
                     if (!flickerLights || eventLights == null || eventLights.Length == 0) return false;
-                    StartCoroutine(FlickerLightsRoutine(eventDuration));
+                    StartCoroutine(FlickerLightsRoutine(GetScaledValue(eventDuration)));
                     SetObjective("Luzes piscando. Mantenham a maca no centro.");
                     return true;
                 case 1:
                     if (!lockDoor || doors == null || doors.Length == 0) return false;
-                    doors[Random.Range(0, doors.Length)].LockFor(doorLockDuration);
+                    doors[Random.Range(0, doors.Length)].LockFor(GetScaledValue(doorLockDuration));
                     SetObjective("Porta travou. Segurem a maca.");
                     return true;
                 case 2:
                     if (!patientMoves || stretcher == null) return false;
-                    stretcher.ApplyPatientMovementImpulse(patientJostleImpulse, patientJostleDamage);
+                    stretcher.ApplyPatientMovementImpulse(
+                        GetScaledValue(patientJostleImpulse),
+                        GetScaledValue(patientJostleDamage));
                     SetObjective("Paciente se mexeu na maca.");
                     return true;
                 case 3:
                     if (!crossingObstacle || movingObstacles == null || movingObstacles.Length == 0) return false;
-                    movingObstacles[Random.Range(0, movingObstacles.Length)].TriggerBurst(eventDuration);
+                    movingObstacles[Random.Range(0, movingObstacles.Length)].TriggerBurst(GetScaledValue(eventDuration));
                     SetObjective("Obstaculo atravessando.");
                     return true;
                 case 4:
                     if (!slipperyFloor || slipperyZones == null || slipperyZones.Length == 0) return false;
-                    slipperyZones[Random.Range(0, slipperyZones.Length)].ActivateFor(eventDuration + 2f);
+                    slipperyZones[Random.Range(0, slipperyZones.Length)].ActivateFor(GetScaledValue(eventDuration + 2f));
                     SetObjective("Chao escorregadio temporario.");
                     return true;
                 case 5:
                     if (!sirenConfusion) return false;
-                    StartCoroutine(SirenRoutine(eventDuration));
+                    StartCoroutine(SirenRoutine(GetScaledValue(eventDuration)));
                     SetObjective("Sirene confundindo a equipe.");
                     return true;
                 default:
@@ -249,6 +255,26 @@ namespace MacaRush
             {
                 GameManager.Instance.SetObjective(objective);
             }
+        }
+
+        private Vector2 GetScaledDelayRange()
+        {
+            var t = GetDifficultyProgress();
+            var scaledMin = Mathf.Lerp(minDelay, minDelayAtMaxDifficulty, t);
+            var scaledMax = Mathf.Lerp(maxDelay, maxDelayAtMaxDifficulty, t);
+            return new Vector2(Mathf.Max(0.5f, scaledMin), Mathf.Max(scaledMin + 0.1f, scaledMax));
+        }
+
+        private float GetScaledValue(float baseValue)
+        {
+            var difficulty = GameManager.Instance != null ? GameManager.Instance.DifficultyMultiplier : 1f;
+            return baseValue * Mathf.Lerp(1f, difficulty, eventIntensityInfluence);
+        }
+
+        private static float GetDifficultyProgress()
+        {
+            if (GameManager.Instance == null) return 0f;
+            return Mathf.Clamp01(GameManager.Instance.MatchProgress01);
         }
     }
 }
