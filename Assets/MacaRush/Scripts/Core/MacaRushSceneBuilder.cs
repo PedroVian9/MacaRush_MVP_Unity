@@ -9,6 +9,7 @@ namespace MacaRush
         [Header("Build")]
         [SerializeField] private bool clearPreviousGeneratedScene = true;
         [SerializeField] private string generatedRootName = "MacaRush_PrototypeScene";
+        [SerializeField] private bool reuseSceneMainCamera = true;
 
         private readonly List<AutoDoor> createdDoors = new List<AutoDoor>();
         private readonly List<MovingObstacle> createdMovingObstacles = new List<MovingObstacle>();
@@ -320,16 +321,41 @@ namespace MacaRush
 
         private Transform CreateCameraAndLighting(Transform root, Transform followTarget)
         {
-            var cameraObject = new GameObject("Main Camera");
-            cameraObject.transform.SetParent(root, false);
+            GameObject cameraObject = null;
+            if (reuseSceneMainCamera && Camera.main != null)
+            {
+                cameraObject = Camera.main.gameObject;
+            }
+
+            if (cameraObject == null)
+            {
+                cameraObject = new GameObject("Main Camera");
+                cameraObject.transform.SetParent(root, false);
+            }
+
             var startPivot = followTarget.position + new Vector3(0f, 1.6f, 0f);
             cameraObject.transform.position = startPivot + Quaternion.Euler(16f, followTarget.eulerAngles.y, 0f) * new Vector3(0f, 0f, -4.6f);
             cameraObject.transform.rotation = Quaternion.LookRotation(startPivot - cameraObject.transform.position, Vector3.up);
-            var camera = cameraObject.AddComponent<Camera>();
+            var camera = cameraObject.GetComponent<Camera>();
+            if (camera == null)
+            {
+                camera = cameraObject.AddComponent<Camera>();
+            }
+
             camera.tag = "MainCamera";
             camera.fieldOfView = 62f;
-            cameraObject.AddComponent<AudioListener>();
-            cameraObject.AddComponent<SimpleFollowCamera>().Configure(followTarget);
+            if (cameraObject.GetComponent<AudioListener>() == null)
+            {
+                cameraObject.AddComponent<AudioListener>();
+            }
+
+            var followCam = cameraObject.GetComponent<SimpleFollowCamera>();
+            if (followCam == null)
+            {
+                followCam = cameraObject.AddComponent<SimpleFollowCamera>();
+            }
+
+            followCam.Configure(followTarget);
 
             var sunObject = new GameObject("Scene Sun");
             sunObject.transform.SetParent(root, false);
