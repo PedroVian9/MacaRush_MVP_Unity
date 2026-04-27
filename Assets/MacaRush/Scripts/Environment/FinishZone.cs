@@ -21,12 +21,13 @@ namespace MacaRush
         private bool IsStretcher(Collider other)
         {
             if (other.GetComponentInParent<MacaStretcher>() != null) return true;
+            if (other == null || string.IsNullOrWhiteSpace(macaTag)) return false;
 
             try
             {
-                return other.CompareTag(macaTag);
+                return string.Equals(other.gameObject.tag, macaTag, System.StringComparison.Ordinal);
             }
-            catch (UnityException)
+            catch
             {
                 return false;
             }

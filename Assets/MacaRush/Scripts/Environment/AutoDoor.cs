@@ -88,11 +88,16 @@ namespace MacaRush
 
         private static bool SafeCompareTag(Component component, string tagName)
         {
+            if (component == null || string.IsNullOrWhiteSpace(tagName))
+            {
+                return false;
+            }
+
             try
             {
-                return component.CompareTag(tagName);
+                return string.Equals(component.gameObject.tag, tagName, System.StringComparison.Ordinal);
             }
-            catch (UnityException)
+            catch
             {
                 return false;
             }

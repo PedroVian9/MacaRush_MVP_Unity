@@ -765,7 +765,7 @@ namespace MacaRush
             rect.sizeDelta = size;
 
             var text = textObject.GetComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = GetBuiltinFont();
             text.fontSize = fontSize;
             text.alignment = alignment;
             text.color = Color.white;
@@ -789,6 +789,14 @@ namespace MacaRush
             image.color = color;
             image.raycastTarget = false;
             return image;
+        }
+
+        private static Font GetBuiltinFont()
+        {
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font != null) return font;
+
+            return Resources.GetBuiltinResource<Font>("Arial.ttf");
         }
 
         private void ClearPreviousScene()
