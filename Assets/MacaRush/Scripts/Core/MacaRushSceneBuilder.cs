@@ -436,9 +436,9 @@ namespace MacaRush
             textMesh.color = textColor;
         }
 
-        private void CreateFloorStripe(Transform root, string name, Vector3 position, Vector3 scale, Material material)
+        private GameObject CreateFloorStripe(Transform root, string name, Vector3 position, Vector3 scale, Material material)
         {
-            CreateCube(name, root, position + Vector3.up * 0.02f, scale, material);
+            return CreateCube(name, root, position + Vector3.up * 0.02f, scale, material);
         }
 
         private void CreateArrowMarker(Transform root, string name, Vector3 position, float width, float length, Material material)
