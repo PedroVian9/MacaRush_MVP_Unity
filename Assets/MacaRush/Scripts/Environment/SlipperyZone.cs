@@ -29,10 +29,17 @@ namespace MacaRush
         {
             if (!IsActive) return;
 
-            var player = other.GetComponentInParent<PlayerCarryController>();
-            if (player != null)
+            var carryPlayer = other.GetComponentInParent<PlayerCarryController>();
+            if (carryPlayer != null)
             {
-                player.ApplyTemporaryControlModifier(playerControlMultiplier, refreshDuration);
+                carryPlayer.ApplyTemporaryControlModifier(playerControlMultiplier, refreshDuration);
+                return;
+            }
+
+            var singlePlayer = other.GetComponentInParent<ThirdPersonPusherController>();
+            if (singlePlayer != null)
+            {
+                singlePlayer.ApplyTemporaryControlModifier(playerControlMultiplier, refreshDuration);
                 return;
             }
 

@@ -37,14 +37,14 @@ namespace MacaRush
             BuildAmbulance(root.transform, materials);
 
             var stretcher = CreateStretcher(root.transform, materials, out var patient);
-            CreatePlayers(root.transform, materials);
+            var player = CreatePlayer(root.transform, materials);
             CreateHud(root.transform, patient, out var sirenOverlay);
             var gameManager = CreateGameManager(root.transform, patient, stretcher);
-            CreateCameraAndLighting(root.transform, stretcher.transform);
+            CreateCameraAndLighting(root.transform, player.transform);
             CreateEventDirector(root.transform, stretcher, sirenOverlay);
 
-            gameManager.SetObjective("Pegue as alcas e leve a maca ate a ambulancia.");
-            Debug.Log("Maca Rush prototype scene created. Press Play to test the local 4-player prototype.");
+            gameManager.SetObjective("Empurre a maca ate a ambulancia.");
+            Debug.Log("Maca Rush prototype scene created. Press Play to test the single-player third-person prototype.");
         }
 
         [ContextMenu("Build MVP Scene")]
@@ -172,20 +172,21 @@ namespace MacaRush
             patient.Configure(patientObject.GetComponent<Renderer>());
             stretcher.Configure(patient, patientObject.transform);
 
-            CreateHandle("Handle P1", maca.transform, rb, 1, new Vector3(-1.25f, 0.15f, 0.65f), materials.Handle);
-            CreateHandle("Handle P2", maca.transform, rb, 2, new Vector3(1.25f, 0.15f, 0.65f), materials.Handle);
-            CreateHandle("Handle P3", maca.transform, rb, 3, new Vector3(-1.25f, 0.15f, -0.65f), materials.Handle);
-            CreateHandle("Handle P4", maca.transform, rb, 4, new Vector3(1.25f, 0.15f, -0.65f), materials.Handle);
-
             return stretcher;
         }
 
-        private void CreatePlayers(Transform root, SceneMaterials materials)
+        private GameObject CreatePlayer(Transform root, SceneMaterials materials)
         {
-            CreatePlayer("Player 1", root, 1, new Vector3(-1.4f, 1f, -0.5f), materials.Player1, KeyCode.W, KeyCode.S, KeyCode.A, KeyCode.D, KeyCode.E, KeyCode.LeftShift);
-            CreatePlayer("Player 2", root, 2, new Vector3(1.4f, 1f, -0.5f), materials.Player2, KeyCode.I, KeyCode.K, KeyCode.J, KeyCode.L, KeyCode.U, KeyCode.RightShift);
-            CreatePlayer("Player 3", root, 3, new Vector3(-1.4f, 1f, -1.8f), materials.Player3, KeyCode.T, KeyCode.G, KeyCode.F, KeyCode.H, KeyCode.R, KeyCode.Y);
-            CreatePlayer("Player 4", root, 4, new Vector3(1.4f, 1f, -1.8f), materials.Player4, KeyCode.UpArrow, KeyCode.DownArrow, KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.RightControl, KeyCode.RightAlt);
+            var player = CreatePrimitive(PrimitiveType.Capsule, "Player", root, new Vector3(0f, 1f, -1.4f), new Vector3(0.68f, 1f, 0.68f), materials.Player1);
+            TryAssignTag(player, "Player");
+
+            var rb = player.AddComponent<Rigidbody>();
+            rb.mass = 3f;
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+            player.AddComponent<ThirdPersonPusherController>();
+            return player;
         }
 
         private GameManager CreateGameManager(Transform root, PatientHealth patient, MacaStretcher stretcher)
@@ -286,43 +287,6 @@ namespace MacaRush
             var door = trigger.AddComponent<AutoDoor>();
             door.Configure(panel.transform, new Vector3(0f, height + 0.45f, 0f), 3.4f, jamChance);
             createdDoors.Add(door);
-        }
-
-        private void CreateHandle(string name, Transform parent, Rigidbody stretcherBody, int playerIndex, Vector3 localPosition, Material material)
-        {
-            var handleObject = new GameObject(name);
-            handleObject.transform.SetParent(parent, false);
-            handleObject.transform.localPosition = localPosition;
-
-            CreateLocalPrimitive(PrimitiveType.Cube, $"{name} Visual", handleObject.transform, Vector3.zero, new Vector3(0.28f, 0.12f, 0.28f), material);
-
-            var handle = handleObject.AddComponent<MacaHandle>();
-            handle.Configure(playerIndex, stretcherBody, handleObject.transform);
-        }
-
-        private void CreatePlayer(
-            string name,
-            Transform root,
-            int index,
-            Vector3 position,
-            Material material,
-            KeyCode up,
-            KeyCode down,
-            KeyCode left,
-            KeyCode right,
-            KeyCode grab,
-            KeyCode sprint)
-        {
-            var player = CreatePrimitive(PrimitiveType.Capsule, name, root, position, new Vector3(0.65f, 1f, 0.65f), material);
-            TryAssignTag(player, "Player");
-
-            var rb = player.AddComponent<Rigidbody>();
-            rb.mass = 1f;
-            rb.constraints = RigidbodyConstraints.FreezeRotation;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
-
-            var controller = player.AddComponent<PlayerCarryController>();
-            controller.Configure(index, up, down, left, right, grab, sprint);
         }
 
         private void CreatePushable(string name, Transform root, Vector3 position, Vector3 scale, float mass, Material material)

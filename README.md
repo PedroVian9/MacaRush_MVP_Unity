@@ -1,120 +1,49 @@
 # Maca Rush - MVP Unity
 
-Maca Rush e um prototipo cooperativo local para 4 jogadores. O objetivo e levar a maca com o paciente ate a ambulancia sem matar o paciente no caminho.
+Maca Rush agora esta em formato single-player: voce controla um personagem em terceira pessoa e empurra a maca ate a ambulancia, lidando com obstaculos e eventos.
 
 ## 1. Requisitos
 
 - Unity Hub instalado.
 - Unity Editor `6000 LTS` ou `2022.3 LTS`.
-- Projeto 3D (Built-in/URP simples; este MVP usa primitivas e scripts).
-- Teclado para 4 jogadores locais.
+- Projeto 3D.
+- Pacote `Unity UI (com.unity.ugui)` instalado no projeto.
 
-## 2. Estrutura esperada
+## 2. Criar e importar
 
-```text
-Assets/
-  MacaRush/
-    Scripts/
-      Core/
-      Player/
-      Stretcher/
-      Patient/
-      UI/
-      Environment/
-      Events/
-    Prefabs/
-      Player/
-      Stretcher/
-      Environment/
-      UI/
-    Scenes/
-    Materials/
-    Audio/
-```
+1. Crie um projeto `3D` no Unity Hub.
+2. Copie a pasta `Assets/MacaRush` para dentro do projeto.
+3. Abra o projeto e aguarde o import.
 
-## 3. Criar o projeto do zero
+## 3. Montar a cena
 
-1. Abra o Unity Hub.
-2. Clique em `New project`.
-3. Escolha template `3D`.
-4. Nomeie como `MacaRush_MVP_Unity`.
-5. Clique em `Create project`.
+1. Abra uma cena vazia e salve em `Assets/MacaRush/Scenes/PrototypeScene.unity`.
+2. Crie um objeto vazio chamado `SceneBuilder`.
+3. Adicione o componente `MacaRushSceneBuilder`.
+4. No menu de contexto do componente, execute `Build Prototype Scene`.
+5. Pressione `Play`.
 
-## 4. Importar este MVP
+## 4. Controles (single-player)
 
-1. Feche o Unity Editor (recomendado para evitar conflito de reimport).
-2. Copie a pasta `Assets/MacaRush` deste repositorio para dentro do seu projeto.
-3. Reabra o projeto no Unity.
-4. Aguarde o Unity terminar o `Importing...`.
+- Mover: `WASD`
+- Correr: `Left Shift`
+- Camera: mouse (`Mouse X` / `Mouse Y`)
+- Reiniciar apos vitoria/derrota: `R`
 
-Se o seu projeto ja tinha arquivos com o mesmo nome, mantenha os scripts mais novos deste MVP.
+## 5. O que a cena gera automaticamente
 
-## 5. Montar a cena jogavel automatica
+- 1 jogador em terceira pessoa.
+- 1 maca com paciente.
+- HUD com vida/estado/tempo/objetivo.
+- Mapa completo: hospital -> elevador/escada -> rua -> ambulancia.
+- Obstaculos fixos e moveis.
+- Eventos aleatorios com dificuldade crescente.
 
-1. No Unity, abra uma cena vazia:
-   - `File > New Scene` (Basic/Empty).
-2. Salve a cena:
-   - `File > Save As...`
-   - caminho sugerido: `Assets/MacaRush/Scenes/PrototypeScene.unity`.
-3. Crie um objeto vazio:
-   - `Hierarchy > Create Empty`
-   - renomeie para `SceneBuilder`.
-4. Com `SceneBuilder` selecionado, clique `Add Component`.
-5. Adicione `MacaRushSceneBuilder`.
-6. No componente, clique no menu de contexto (3 pontinhos) e rode:
-   - `Build Prototype Scene`.
-7. A cena sera gerada automaticamente com:
-   - 4 players;
-   - maca + paciente;
-   - HUD;
-   - hospital, elevador/escada, rua e ambulancia;
-   - obstaculos e eventos.
-
-## 6. Executar (Play)
-
-1. Clique em `Play`.
-2. Teste os controles:
-   - P1: `WASD`, pegar/soltar `E`, correr `Left Shift`.
-   - P2: `IJKL`, pegar/soltar `U`, correr `Right Shift`.
-   - P3: `TFGH`, pegar/soltar `R`, correr `Y`.
-   - P4: `Setas`, pegar/soltar `Right Control`, correr `Right Alt`.
-   - Reiniciar apos vitoria/derrota: `R`.
-3. Objetivo: atravessar o mapa e entrar com a maca na zona da ambulancia.
-
-## 7. O que validar no primeiro teste
-
-1. Todos os 4 jogadores se movem.
-2. Cada jogador so pega sua propria alca.
-3. A maca inclina e pode tombar.
-4. Vida do paciente cai com tempo/impacto/inclinacao.
-5. Eventos aleatorios acontecem (luzes, portas, sirene, etc.).
-6. HUD mostra estado, tempo, objetivo e pressao da partida.
-7. Vitoria/derrota funcionam.
-
-## 8. Configuracoes mais importantes no Inspector
-
-Use estes componentes para balancear rapido:
-
-- `GameManager`:
-  - `maxMatchTime`
-  - `difficultyByProgress` (curva de dificuldade)
-- `PatientHealth`:
-  - `passiveDrainPerSecond`
-  - thresholds (`injuredThreshold`, `criticalThreshold`, `dyingThreshold`)
-- `MacaStretcher`:
-  - `mass`, `centerOfMassOffset`
-  - `impactDamageMultiplier`
-  - `tiltDamagePerSecond`
-- `RandomEventDirector`:
-  - `minDelay/maxDelay`
-  - `minDelayAtMaxDifficulty/maxDelayAtMaxDifficulty`
-  - toggles de eventos
-
-## 9. Condicoes de fim de partida
+## 6. Objetivo e fim de partida
 
 Vitoria:
 
-- Maca entra na zona da ambulancia com paciente vivo.
+- Empurrar a maca ate a zona final da ambulancia com o paciente vivo.
 
 Derrota:
 
@@ -124,40 +53,21 @@ Derrota:
 - Paciente cai fora do mapa.
 - Tempo maximo acaba.
 
-## 10. Build para executavel (opcional)
+## 7. Balanceamento principal (Inspector)
 
-1. Abra `File > Build Settings`.
-2. Clique `Add Open Scenes`.
-3. Escolha plataforma (ex.: Windows).
-4. Clique `Build` ou `Build and Run`.
+- `GameManager`: `maxMatchTime`, `difficultyByProgress`.
+- `PatientHealth`: `passiveDrainPerSecond`.
+- `MacaStretcher`: `mass`, `impactDamageMultiplier`, `tiltDamagePerSecond`.
+- `RandomEventDirector`: delays, intensidade e toggles de eventos.
 
-## 11. Problemas comuns e como resolver
+## 8. Troubleshooting rapido
 
-### Cena vazia ao apertar Play
+Se aparecer erro `UnityEngine.UI`:
 
-- Rode novamente `Build Prototype Scene` no `MacaRushSceneBuilder`.
+1. Abra `Window > Package Manager`.
+2. Selecione `Unity Registry`.
+3. Instale `Unity UI (com.unity.ugui)`.
 
-### Script nao aparece no Add Component
+Se a cena abrir vazia:
 
-- Verifique erros no `Console`; se houver erro de compilacao, a Unity nao carrega scripts novos.
-
-### Controles de algum player nao respondem
-
-- Teclados comuns podem ter `ghosting` com muitas teclas simultaneas.
-- Reconfigure as teclas dos players nos componentes `PlayerCarryController`.
-
-### Eventos nao aparecem
-
-- Confira `eventsEnabled` no `RandomEventDirector`.
-
-### Sirene sem som
-
-- O visual funciona sem audio.
-- Para som, adicione um `AudioSource` com `AudioClip` no `RandomEventDirector`.
-
-## 12. Estado atual do prototipo
-
-- Ja existe mapa completo com progresso de inicio ao fim.
-- Ja existem obstaculos fixos e moveis.
-- Ja existe dificuldade crescente ao longo da partida.
-- Ainda precisa de polimento visual e ajuste fino de balanceamento.
+- Rode novamente `Build Prototype Scene`.

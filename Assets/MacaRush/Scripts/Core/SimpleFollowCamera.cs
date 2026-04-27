@@ -5,28 +5,40 @@ namespace MacaRush
     public sealed class SimpleFollowCamera : MonoBehaviour
     {
         [SerializeField] private Transform target;
-        [SerializeField] private Vector3 offset = new Vector3(0f, 12f, -10f);
-        [SerializeField] private float followSpeed = 4f;
-        [SerializeField] private float lookAhead = 2.5f;
+        [SerializeField] private Vector3 pivotOffset = new Vector3(0f, 1.8f, 0f);
+        [SerializeField] private float distance = 5.2f;
+        [SerializeField] private float minPitch = -25f;
+        [SerializeField] private float maxPitch = 55f;
+        [SerializeField] private float mouseSensitivity = 2.2f;
+        [SerializeField] private float positionLerp = 12f;
 
-        private Rigidbody targetBody;
+        private float yaw;
+        private float pitch = 18f;
 
         private void LateUpdate()
         {
             if (target == null) return;
 
-            var velocity = targetBody != null ? targetBody.velocity : Vector3.zero;
-            var lookTarget = target.position + new Vector3(velocity.x, 0f, velocity.z).normalized * lookAhead;
-            var desiredPosition = lookTarget + offset;
+            yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
+            pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+            pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
-            transform.position = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * followSpeed);
-            transform.rotation = Quaternion.LookRotation(lookTarget - transform.position, Vector3.up);
+            var pivot = target.position + pivotOffset;
+            var rotation = Quaternion.Euler(pitch, yaw, 0f);
+            var desiredPosition = pivot + rotation * new Vector3(0f, 0f, -distance);
+
+            transform.position = Vector3.Lerp(transform.position, desiredPosition, positionLerp * Time.deltaTime);
+            transform.rotation = Quaternion.LookRotation(pivot - transform.position, Vector3.up);
         }
 
         public void Configure(Transform followTarget)
         {
             target = followTarget;
-            targetBody = target != null ? target.GetComponent<Rigidbody>() : null;
+
+            if (target != null)
+            {
+                yaw = target.eulerAngles.y;
+            }
         }
     }
 }

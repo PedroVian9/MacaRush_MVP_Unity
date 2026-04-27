@@ -100,12 +100,12 @@ namespace MacaRush
                 case 0:
                     if (!flickerLights || eventLights == null || eventLights.Length == 0) return false;
                     StartCoroutine(FlickerLightsRoutine(GetScaledValue(eventDuration)));
-                    SetObjective("Luzes piscando. Mantenham a maca no centro.");
+                    SetObjective("Luzes piscando. Mantenha a maca no centro.");
                     return true;
                 case 1:
                     if (!lockDoor || doors == null || doors.Length == 0) return false;
                     doors[Random.Range(0, doors.Length)].LockFor(GetScaledValue(doorLockDuration));
-                    SetObjective("Porta travou. Segurem a maca.");
+                    SetObjective("Porta travou. Contorne e reposicione a maca.");
                     return true;
                 case 2:
                     if (!patientMoves || stretcher == null) return false;
@@ -127,7 +127,7 @@ namespace MacaRush
                 case 5:
                     if (!sirenConfusion) return false;
                     StartCoroutine(SirenRoutine(GetScaledValue(eventDuration)));
-                    SetObjective("Sirene confundindo a equipe.");
+                    SetObjective("Sirene ativa. Mantenha o controle.");
                     return true;
                 default:
                     return false;
