@@ -1,14 +1,15 @@
 # Maca Rush - MVP Unity
 
-Maca Rush e um prototipo cooperativo local para 4 jogadores. A equipe precisa carregar uma maca com um paciente ate a ambulancia, passando por corredor, rota de elevador/escada, rua e zona final.
+Maca Rush e um prototipo cooperativo local para 4 jogadores. O objetivo e levar a maca com o paciente ate a ambulancia sem matar o paciente no caminho.
 
-## Versao indicada
+## 1. Requisitos
 
-- Unity 6000 LTS ou Unity 2022.3 LTS.
-- Projeto 3D padrao.
-- Sem assets pagos e sem backend.
+- Unity Hub instalado.
+- Unity Editor `6000 LTS` ou `2022.3 LTS`.
+- Projeto 3D (Built-in/URP simples; este MVP usa primitivas e scripts).
+- Teclado para 4 jogadores locais.
 
-## Estrutura
+## 2. Estrutura esperada
 
 ```text
 Assets/
@@ -31,62 +32,89 @@ Assets/
     Audio/
 ```
 
-## Como montar a cena jogavel
+## 3. Criar o projeto do zero
 
-1. Abra ou crie uma cena 3D vazia na Unity.
-2. Crie um GameObject vazio chamado `SceneBuilder`.
-3. Adicione o componente `MacaRushSceneBuilder`.
-4. No menu de contexto do componente, execute `Build Prototype Scene`.
-5. Pressione Play.
+1. Abra o Unity Hub.
+2. Clique em `New project`.
+3. Escolha template `3D`.
+4. Nomeie como `MacaRush_MVP_Unity`.
+5. Clique em `Create project`.
 
-O builder cria automaticamente:
+## 4. Importar este MVP
 
-- 4 jogadores locais;
-- maca fisica com 4 alcas;
-- paciente com vida e estados;
-- HUD;
-- mapa com hospital, elevador/escada, rua e ambulancia;
-- portas automaticas;
-- obstaculos leves;
-- buracos, cones, chuva escorregadia e carros;
-- diretor de eventos aleatorios.
+1. Feche o Unity Editor (recomendado para evitar conflito de reimport).
+2. Copie a pasta `Assets/MacaRush` deste repositorio para dentro do seu projeto.
+3. Reabra o projeto no Unity.
+4. Aguarde o Unity terminar o `Importing...`.
 
-As tags `Player` e `Maca` sao opcionais. Se elas existirem, o builder usa; se nao existirem, os scripts funcionam por componentes.
+Se o seu projeto ja tinha arquivos com o mesmo nome, mantenha os scripts mais novos deste MVP.
 
-## Controles
+## 5. Montar a cena jogavel automatica
 
-- Player 1: WASD, pegar/soltar `E`, correr `Left Shift`.
-- Player 2: IJKL, pegar/soltar `U`, correr `Right Shift`.
-- Player 3: TFGH, pegar/soltar `R`, correr `Y`.
-- Player 4: setas, pegar/soltar `Right Control`, correr `Right Alt`.
-- Reiniciar apos vitoria/derrota: `R`.
+1. No Unity, abra uma cena vazia:
+   - `File > New Scene` (Basic/Empty).
+2. Salve a cena:
+   - `File > Save As...`
+   - caminho sugerido: `Assets/MacaRush/Scenes/PrototypeScene.unity`.
+3. Crie um objeto vazio:
+   - `Hierarchy > Create Empty`
+   - renomeie para `SceneBuilder`.
+4. Com `SceneBuilder` selecionado, clique `Add Component`.
+5. Adicione `MacaRushSceneBuilder`.
+6. No componente, clique no menu de contexto (3 pontinhos) e rode:
+   - `Build Prototype Scene`.
+7. A cena sera gerada automaticamente com:
+   - 4 players;
+   - maca + paciente;
+   - HUD;
+   - hospital, elevador/escada, rua e ambulancia;
+   - obstaculos e eventos.
 
-Cada jogador so pega a sua propria alca. A stamina cai ao correr e ao carregar a maca; com stamina baixa, o jogador perde eficiencia.
+## 6. Executar (Play)
 
-## Sistemas principais
+1. Clique em `Play`.
+2. Teste os controles:
+   - P1: `WASD`, pegar/soltar `E`, correr `Left Shift`.
+   - P2: `IJKL`, pegar/soltar `U`, correr `Right Shift`.
+   - P3: `TFGH`, pegar/soltar `R`, correr `Y`.
+   - P4: `Setas`, pegar/soltar `Right Control`, correr `Right Alt`.
+   - Reiniciar apos vitoria/derrota: `R`.
+3. Objetivo: atravessar o mapa e entrar com a maca na zona da ambulancia.
 
-- `PlayerCarryController`: movimento, corrida, stamina, pegar/soltar alca e empurrar objetos leves.
-- `MacaHandle`: junta elastica entre player e maca.
-- `MacaStretcher`: peso, centro de massa, dano por impacto, dano por inclinacao, derrota por tombamento e queda.
-- `PatientHealth`: vida, estados `Stable`, `Injured`, `Critical`, `Dying`, `Dead` e cor simples do paciente.
-- `GameManager`: tempo de partida, objetivo, vitoria, derrota e reinicio.
-- `GameManager`: tempo de partida, objetivo, vitoria, derrota, reinicio e multiplicador de dificuldade por progresso.
-- `SimpleHud`: vida, estado, tempo, objetivo, alerta critico e mensagens finais.
-- `RandomEventDirector`: luz piscando, porta travando, paciente se mexendo, obstaculo atravessando, chao escorregadio e sirene visual com frequencia/intensidade crescentes.
+## 7. O que validar no primeiro teste
 
-## Dificuldade crescente
+1. Todos os 4 jogadores se movem.
+2. Cada jogador so pega sua propria alca.
+3. A maca inclina e pode tombar.
+4. Vida do paciente cai com tempo/impacto/inclinacao.
+5. Eventos aleatorios acontecem (luzes, portas, sirene, etc.).
+6. HUD mostra estado, tempo, objetivo e pressao da partida.
+7. Vitoria/derrota funcionam.
 
-- A partida agora escala dificuldade automaticamente com o tempo (`DifficultyMultiplier` no `GameManager`).
-- Dreno passivo do paciente aumenta ao longo da partida.
-- Dano por impacto/inclinacao da maca cresce com a pressao da partida.
-- Eventos aleatorios ficam mais frequentes e mais fortes.
-- O HUD mostra a pressao atual (`Baixa`, `Media`, `Alta`) e o multiplicador (`x`).
+## 8. Configuracoes mais importantes no Inspector
 
-## Condicoes de jogo
+Use estes componentes para balancear rapido:
+
+- `GameManager`:
+  - `maxMatchTime`
+  - `difficultyByProgress` (curva de dificuldade)
+- `PatientHealth`:
+  - `passiveDrainPerSecond`
+  - thresholds (`injuredThreshold`, `criticalThreshold`, `dyingThreshold`)
+- `MacaStretcher`:
+  - `mass`, `centerOfMassOffset`
+  - `impactDamageMultiplier`
+  - `tiltDamagePerSecond`
+- `RandomEventDirector`:
+  - `minDelay/maxDelay`
+  - `minDelayAtMaxDifficulty/maxDelayAtMaxDifficulty`
+  - toggles de eventos
+
+## 9. Condicoes de fim de partida
 
 Vitoria:
 
-- A maca entra na zona da ambulancia com o paciente vivo.
+- Maca entra na zona da ambulancia com paciente vivo.
 
 Derrota:
 
@@ -96,17 +124,40 @@ Derrota:
 - Paciente cai fora do mapa.
 - Tempo maximo acaba.
 
-## Problemas conhecidos
+## 10. Build para executavel (opcional)
 
-- O mapa e todo feito com primitivas da Unity; nao ha polimento visual.
-- A sirene ainda e feedback visual se nenhum `AudioClip` for configurado no `RandomEventDirector`.
-- O paciente ainda e um collider filho da maca; a "queda" e uma condicao de gameplay por inclinacao/altura, nao uma animacao ragdoll.
-- Os valores de massa, dano e stamina provavelmente precisam de ajuste depois de testar com quatro pessoas.
+1. Abra `File > Build Settings`.
+2. Clique `Add Open Scenes`.
+3. Escolha plataforma (ex.: Windows).
+4. Clique `Build` ou `Build and Run`.
 
-## Proximos passos recomendados
+## 11. Problemas comuns e como resolver
 
-1. Testar 4 jogadores no mesmo teclado e ajustar keys se houver ghosting.
-2. Criar uma cena `.unity` salva em `Assets/MacaRush/Scenes`.
-3. Transformar os objetos gerados em prefabs quando o layout estabilizar.
-4. Migrar input para Unity Input System se for usar controles/gamepads.
-5. Adicionar audio simples para sirene, batidas e paciente critico.
+### Cena vazia ao apertar Play
+
+- Rode novamente `Build Prototype Scene` no `MacaRushSceneBuilder`.
+
+### Script nao aparece no Add Component
+
+- Verifique erros no `Console`; se houver erro de compilacao, a Unity nao carrega scripts novos.
+
+### Controles de algum player nao respondem
+
+- Teclados comuns podem ter `ghosting` com muitas teclas simultaneas.
+- Reconfigure as teclas dos players nos componentes `PlayerCarryController`.
+
+### Eventos nao aparecem
+
+- Confira `eventsEnabled` no `RandomEventDirector`.
+
+### Sirene sem som
+
+- O visual funciona sem audio.
+- Para som, adicione um `AudioSource` com `AudioClip` no `RandomEventDirector`.
+
+## 12. Estado atual do prototipo
+
+- Ja existe mapa completo com progresso de inicio ao fim.
+- Ja existem obstaculos fixos e moveis.
+- Ja existe dificuldade crescente ao longo da partida.
+- Ainda precisa de polimento visual e ajuste fino de balanceamento.
