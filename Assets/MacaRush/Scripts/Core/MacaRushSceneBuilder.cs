@@ -321,21 +321,37 @@ namespace MacaRush
 
         private Transform CreateCameraAndLighting(Transform root, Transform followTarget)
         {
-            GameObject cameraObject = null;
-            if (reuseSceneMainCamera && Camera.main != null)
+            if (followTarget == null)
             {
-                cameraObject = Camera.main.gameObject;
+                var pusher = FindFirstObjectByType<ThirdPersonPusherController>();
+                if (pusher != null)
+                {
+                    followTarget = pusher.transform;
+                }
             }
 
+            var camerasInScene = FindObjectsByType<Camera>(FindObjectsSortMode.None);
+            Camera chosenCamera = null;
+
+            if (reuseSceneMainCamera)
+            {
+                if (Camera.main != null)
+                {
+                    chosenCamera = Camera.main;
+                }
+                else if (camerasInScene.Length > 0)
+                {
+                    chosenCamera = camerasInScene[0];
+                }
+            }
+
+            GameObject cameraObject = chosenCamera != null ? chosenCamera.gameObject : null;
             if (cameraObject == null)
             {
                 cameraObject = new GameObject("Main Camera");
                 cameraObject.transform.SetParent(root, false);
             }
 
-            var startPivot = followTarget.position + new Vector3(0f, 1.6f, 0f);
-            cameraObject.transform.position = startPivot + Quaternion.Euler(16f, followTarget.eulerAngles.y, 0f) * new Vector3(0f, 0f, -4.6f);
-            cameraObject.transform.rotation = Quaternion.LookRotation(startPivot - cameraObject.transform.position, Vector3.up);
             var camera = cameraObject.GetComponent<Camera>();
             if (camera == null)
             {
@@ -344,6 +360,14 @@ namespace MacaRush
 
             camera.tag = "MainCamera";
             camera.fieldOfView = 62f;
+
+            if (followTarget != null)
+            {
+                var startPivot = followTarget.position + new Vector3(0f, 1.6f, 0f);
+                cameraObject.transform.position = startPivot + Quaternion.Euler(16f, followTarget.eulerAngles.y, 0f) * new Vector3(0f, 0f, -4.6f);
+                cameraObject.transform.rotation = Quaternion.LookRotation(startPivot - cameraObject.transform.position, Vector3.up);
+            }
+
             if (cameraObject.GetComponent<AudioListener>() == null)
             {
                 cameraObject.AddComponent<AudioListener>();
@@ -356,6 +380,17 @@ namespace MacaRush
             }
 
             followCam.Configure(followTarget);
+
+            for (var i = 0; i < camerasInScene.Length; i++)
+            {
+                var other = camerasInScene[i];
+                if (other == null || other == camera) continue;
+
+                if (other.CompareTag("MainCamera"))
+                {
+                    other.tag = "Untagged";
+                }
+            }
 
             var sunObject = new GameObject("Scene Sun");
             sunObject.transform.SetParent(root, false);
