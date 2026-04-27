@@ -20,8 +20,17 @@ Maca Rush agora esta em formato single-player: voce controla um personagem em te
 1. Abra uma cena vazia e salve em `Assets/MacaRush/Scenes/PrototypeScene.unity`.
 2. Crie um objeto vazio chamado `SceneBuilder`.
 3. Adicione o componente `MacaRushSceneBuilder`.
-4. No menu de contexto do componente, execute `Build Prototype Scene`.
+4. No Inspector, mantenha `autoBuildOnPlay` ligado e `showMainMenuOnPlay` ligado.
 5. Pressione `Play`.
+6. No menu principal:
+   - selecione o mapa no dropdown;
+   - clique `Jogar`.
+
+Se preferir pular o menu:
+
+1. Desligue `showMainMenuOnPlay`.
+2. Ajuste `defaultMapPreset`.
+3. Pressione `Play` (ou execute `Build Prototype Scene` no contexto do componente).
 
 ## 4. Controles (single-player)
 
@@ -31,18 +40,22 @@ Maca Rush agora esta em formato single-player: voce controla um personagem em te
 - Camera: mouse (`Mouse X` / `Mouse Y`)
 - Reiniciar apos vitoria/derrota: `R`
 
-## 5. O que a cena gera automaticamente
+## 5. Modos de mapa
 
-- 1 jogador em terceira pessoa com corpo blocado, bracos, pernas, mascara e mochila medica.
-- 1 maca com frame, rodas, trilhos, colchao, paciente e alerta critico visual.
+- `Mapa Completo`: hospital -> elevador/escada -> rua -> ambulancia.
+- `Hospital Sprint`: trecho curto no hospital com zona de embarque.
+- `Street Dash`: foco em rua com trafego e hazards.
+
+## 6. O que a cena gera automaticamente
+
+- 1 jogador em terceira pessoa com blocagem detalhada.
+- 1 maca com frame, rodas e paciente com risco real.
 - HUD com vida/estado/tempo/objetivo.
-- Mapa completo: hospital -> elevador/escada -> rua -> ambulancia.
-- Cenario com paineis, placas, faixas de rota, marcacoes de perigo e zona final destacada.
-- Obstaculos fixos e moveis com cores por funcao.
-- Eventos aleatorios com dificuldade crescente.
+- Cenario modular com sinalizacao por funcao (interacao, perigo, objetivo).
+- Obstaculos fixos/moveis e eventos aleatorios configuraveis.
 - FX leves de impacto, escorregao, alerta critico e sirene visual.
 
-## 6. Objetivo e fim de partida
+## 7. Objetivo e fim de partida
 
 Vitoria:
 
@@ -56,15 +69,16 @@ Derrota:
 - Paciente cai fora do mapa.
 - Tempo maximo acaba.
 
-## 7. Balanceamento principal (Inspector)
+## 8. Balanceamento principal (Inspector)
 
 - `GameManager`: `maxMatchTime`, `difficultyByProgress`.
 - `PatientHealth`: `passiveDrainPerSecond`.
 - `MacaStretcher`: `mass`, `impactDamageMultiplier`, `tiltDamagePerSecond`.
-- `SimpleFollowCamera`: distancia, sensibilidade, colisao e framing da maca.
+- `SimpleFollowCamera`: distancia, sensibilidade, colisao e framing.
 - `RandomEventDirector`: delays, intensidade e toggles de eventos.
+- `MacaRushSceneBuilder`: `defaultMapPreset`, `autoBuildOnPlay`, `showMainMenuOnPlay`.
 
-## 8. Troubleshooting rapido
+## 9. Troubleshooting rapido
 
 Se aparecer erro `UnityEngine.UI`:
 
@@ -75,3 +89,8 @@ Se aparecer erro `UnityEngine.UI`:
 Se a cena abrir vazia:
 
 - Rode novamente `Build Prototype Scene`.
+
+Se o menu nao aparecer:
+
+- Verifique se existe um `MacaRushSceneBuilder` ativo na cena.
+- Confirme `autoBuildOnPlay = true` e `showMainMenuOnPlay = true`.

@@ -4,20 +4,51 @@ using UnityEngine.UI;
 
 namespace MacaRush
 {
+    public enum MapPreset
+    {
+        FullRoute = 0,
+        HospitalSprint = 1,
+        StreetDash = 2
+    }
+
     public sealed class MacaRushSceneBuilder : MonoBehaviour
     {
         [Header("Build")]
         [SerializeField] private bool clearPreviousGeneratedScene = true;
         [SerializeField] private string generatedRootName = "MacaRush_PrototypeScene";
         [SerializeField] private bool reuseSceneMainCamera = true;
+        [SerializeField] private bool autoBuildOnPlay = true;
+        [SerializeField] private bool showMainMenuOnPlay = true;
+        [SerializeField] private MapPreset defaultMapPreset = MapPreset.FullRoute;
 
         private readonly List<AutoDoor> createdDoors = new List<AutoDoor>();
         private readonly List<MovingObstacle> createdMovingObstacles = new List<MovingObstacle>();
         private readonly List<SlipperyZone> createdSlipperyZones = new List<SlipperyZone>();
         private readonly List<Light> createdLights = new List<Light>();
 
+        private void Start()
+        {
+            if (!Application.isPlaying || !autoBuildOnPlay)
+            {
+                return;
+            }
+
+            if (showMainMenuOnPlay)
+            {
+                MacaRushMainMenu.EnsureCreated(this, defaultMapPreset);
+                return;
+            }
+
+            Build(defaultMapPreset);
+        }
+
         [ContextMenu("Build Prototype Scene")]
         public void Build()
+        {
+            Build(defaultMapPreset);
+        }
+
+        public void Build(MapPreset preset)
         {
             if (clearPreviousGeneratedScene)
             {
@@ -32,13 +63,47 @@ namespace MacaRush
             var root = new GameObject(generatedRootName);
             var materials = SceneMaterials.Create();
 
-            BuildHospital(root.transform, materials);
-            BuildRouteChoice(root.transform, materials);
-            BuildStreet(root.transform, materials);
-            BuildAmbulance(root.transform, materials);
+            var layout = ResolveLayout(preset);
+            if (layout.BuildHospital)
+            {
+                BuildHospital(root.transform, materials);
+            }
 
-            var stretcher = CreateStretcher(root.transform, materials, out var patient);
-            var player = CreatePlayer(root.transform, materials);
+            if (layout.BuildRouteChoice)
+            {
+                BuildRouteChoice(root.transform, materials);
+            }
+
+            if (layout.BuildStreet)
+            {
+                BuildStreet(root.transform, materials);
+            }
+
+            if (layout.BuildAmbulance)
+            {
+                BuildAmbulance(root.transform, materials);
+            }
+            else
+            {
+                BuildHospitalFinish(root.transform, materials);
+            }
+
+            if (preset == MapPreset.StreetDash)
+            {
+                BuildStreetStartArea(root.transform, materials);
+                BuildStreetDashEnhancements(root.transform, materials);
+            }
+            else if (preset == MapPreset.HospitalSprint)
+            {
+                BuildHospitalSprintEnhancements(root.transform, materials);
+            }
+            else
+            {
+                BuildFullRouteEnhancements(root.transform, materials);
+            }
+
+            var stretcher = CreateStretcher(root.transform, materials, layout.StretcherSpawn, out var patient);
+            var player = CreatePlayer(root.transform, materials, layout.PlayerSpawn);
             CreateHud(root.transform, patient, out var sirenOverlay);
             var gameManager = CreateGameManager(root.transform, patient, stretcher);
             var cameraTransform = CreateCameraAndLighting(root.transform, player.transform);
@@ -50,14 +115,54 @@ namespace MacaRush
 
             CreateEventDirector(root.transform, stretcher, sirenOverlay);
 
-            gameManager.SetObjective("Segure com E e leve a maca ate a ambulancia.");
-            Debug.Log("Maca Rush prototype scene created. Press Play to test the single-player third-person prototype.");
+            gameManager.SetObjective(layout.Objective);
+            Debug.Log($"Maca Rush scene created with preset: {preset}.");
         }
 
         [ContextMenu("Build MVP Scene")]
         public void BuildLegacyMenu()
         {
             Build();
+        }
+
+        private LayoutSettings ResolveLayout(MapPreset preset)
+        {
+            switch (preset)
+            {
+                case MapPreset.HospitalSprint:
+                    return new LayoutSettings
+                    {
+                        BuildHospital = true,
+                        BuildRouteChoice = false,
+                        BuildStreet = false,
+                        BuildAmbulance = false,
+                        PlayerSpawn = new Vector3(0f, 1f, -1.4f),
+                        StretcherSpawn = new Vector3(0f, 0.85f, 0.8f),
+                        Objective = "Sprint hospitalar: leve a maca ate a zona de embarque."
+                    };
+                case MapPreset.StreetDash:
+                    return new LayoutSettings
+                    {
+                        BuildHospital = false,
+                        BuildRouteChoice = false,
+                        BuildStreet = true,
+                        BuildAmbulance = true,
+                        PlayerSpawn = new Vector3(0f, 0.2f, 28.6f),
+                        StretcherSpawn = new Vector3(0f, -0.1f, 30.1f),
+                        Objective = "Street dash: controle a maca na rua e entregue na ambulancia."
+                    };
+                default:
+                    return new LayoutSettings
+                    {
+                        BuildHospital = true,
+                        BuildRouteChoice = true,
+                        BuildStreet = true,
+                        BuildAmbulance = true,
+                        PlayerSpawn = new Vector3(0f, 1f, -1.4f),
+                        StretcherSpawn = new Vector3(0f, 0.85f, 0.8f),
+                        Objective = "Segure com E e leve a maca ate a ambulancia."
+                    };
+            }
         }
 
         private void BuildHospital(Transform root, SceneMaterials materials)
@@ -188,11 +293,11 @@ namespace MacaRush
             finish.AddComponent<FinishZone>();
         }
 
-        private MacaStretcher CreateStretcher(Transform root, SceneMaterials materials, out PatientHealth patient)
+        private MacaStretcher CreateStretcher(Transform root, SceneMaterials materials, Vector3 spawnPosition, out PatientHealth patient)
         {
             var maca = new GameObject("Maca");
             maca.transform.SetParent(root, false);
-            maca.transform.position = new Vector3(0f, 0.85f, 0.8f);
+            maca.transform.position = spawnPosition;
             TryAssignTag(maca, "Maca");
 
             CreateLocalPrimitive(PrimitiveType.Cube, "Maca Body", maca.transform, Vector3.zero, new Vector3(2.2f, 0.25f, 1.1f), materials.Stretcher);
@@ -235,11 +340,11 @@ namespace MacaRush
             return stretcher;
         }
 
-        private GameObject CreatePlayer(Transform root, SceneMaterials materials)
+        private GameObject CreatePlayer(Transform root, SceneMaterials materials, Vector3 spawnPosition)
         {
             var player = new GameObject("Player");
             player.transform.SetParent(root, false);
-            player.transform.position = new Vector3(0f, 1f, -1.4f);
+            player.transform.position = spawnPosition;
             TryAssignTag(player, "Player");
 
             var collider = player.AddComponent<CapsuleCollider>();
@@ -379,6 +484,7 @@ namespace MacaRush
                 followCam = cameraObject.AddComponent<SimpleFollowCamera>();
             }
 
+            followCam.enabled = true;
             followCam.Configure(followTarget);
 
             for (var i = 0; i < camerasInScene.Length; i++)
@@ -419,6 +525,71 @@ namespace MacaRush
                 createdMovingObstacles.ToArray(),
                 createdSlipperyZones.ToArray(),
                 createdLights.ToArray());
+        }
+
+        private void BuildHospitalFinish(Transform root, SceneMaterials materials)
+        {
+            CreateCube("Hospital Finish Floor", root, new Vector3(0f, 0f, 18f), new Vector3(6f, 0.2f, 5f), materials.Floor);
+            CreateCube("Hospital Finish Left Wall", root, new Vector3(-3.15f, 1.4f, 18f), new Vector3(0.25f, 2.8f, 5f), materials.Wall);
+            CreateCube("Hospital Finish Right Wall", root, new Vector3(3.15f, 1.4f, 18f), new Vector3(0.25f, 2.8f, 5f), materials.Wall);
+            CreateCube("Hospital Finish Back Wall", root, new Vector3(0f, 1.4f, 20.5f), new Vector3(6f, 2.8f, 0.25f), materials.Wall);
+            CreateSign(root, "Hospital Sprint Sign", "TRIAGE LOAD ZONE", new Vector3(0f, 2.25f, 19.4f), new Vector3(2.8f, 0.5f, 0.08f), materials.Objective, Color.black);
+
+            var finish = CreateCube("Finish Zone - Triage", root, new Vector3(0f, 0.3f, 18.6f), new Vector3(4.5f, 1.2f, 2.1f), materials.Finish);
+            finish.GetComponent<Collider>().isTrigger = true;
+            finish.AddComponent<FinishZone>();
+        }
+
+        private void BuildStreetStartArea(Transform root, SceneMaterials materials)
+        {
+            CreateCube("Street Dash Start Platform", root, new Vector3(0f, 0f, 28.4f), new Vector3(9.2f, 0.2f, 3.8f), materials.Street);
+            CreateCube("Street Dash Barrier Left", root, new Vector3(-4.8f, 0.8f, 28.4f), new Vector3(0.25f, 1.6f, 3.8f), materials.Wall);
+            CreateCube("Street Dash Barrier Right", root, new Vector3(4.8f, 0.8f, 28.4f), new Vector3(0.25f, 1.6f, 3.8f), materials.Wall);
+            CreateArrowMarker(root, "Street Dash Arrow", new Vector3(0f, 0.12f, 29f), 1f, 1.3f, materials.Objective);
+        }
+
+        private void BuildFullRouteEnhancements(Transform root, SceneMaterials materials)
+        {
+            BuildHospitalModuleLights(root, materials, -0.5f, 14f, 5);
+            CreatePushable("Emergency Crate", root, new Vector3(2.1f, 0.45f, 10.8f), new Vector3(0.85f, 0.7f, 0.8f), 4.2f, materials.Interactable);
+            CreateCube("Street Sidewalk Left", root, new Vector3(-7.3f, -0.15f, 44f), new Vector3(2f, 0.45f, 22f), materials.Curb);
+            CreateCube("Street Sidewalk Right", root, new Vector3(7.3f, -0.15f, 44f), new Vector3(2f, 0.45f, 22f), materials.Curb);
+            CreateCone("Checkpoint Cone A", root, new Vector3(-1.2f, -0.05f, 52.3f), materials.Cone);
+            CreateCone("Checkpoint Cone B", root, new Vector3(1.2f, -0.05f, 52.3f), materials.Cone);
+        }
+
+        private void BuildHospitalSprintEnhancements(Transform root, SceneMaterials materials)
+        {
+            BuildHospitalModuleLights(root, materials, -0.6f, 16f, 6);
+            CreatePushable("Bio Cart", root, new Vector3(1.1f, 0.45f, 15.6f), new Vector3(0.9f, 0.65f, 0.75f), 3.5f, materials.Interactable);
+            CreatePushable("Wheelchair", root, new Vector3(-1.45f, 0.4f, 17.2f), new Vector3(0.9f, 0.6f, 0.7f), 3.1f, materials.Interactable);
+        }
+
+        private void BuildStreetDashEnhancements(Transform root, SceneMaterials materials)
+        {
+            CreateCar("Street Dash Car C", root, new Vector3(0f, 0.15f, 40.2f), new Vector3(-8f, 0f, 0f), new Vector3(8f, 0f, 0f), 1.4f, materials.Car);
+            CreateCar("Street Dash Car D", root, new Vector3(0f, 0.15f, 47f), new Vector3(8f, 0f, 0f), new Vector3(-8f, 0f, 0f), 1.32f, materials.Car);
+            CreatePothole("Street Dash Pothole D", root, new Vector3(2.2f, -0.35f, 45.4f), materials.Hazard);
+            CreateCone("Street Dash Cone A", root, new Vector3(-3f, -0.05f, 35f), materials.Cone);
+            CreateCone("Street Dash Cone B", root, new Vector3(3f, -0.05f, 36.2f), materials.Cone);
+            CreateCube("Street Dash Warning Barrier", root, new Vector3(0f, 0.5f, 33.2f), new Vector3(2.4f, 0.6f, 0.4f), materials.Danger);
+            CreateSign(root, "Street Dash Sign", "SLIPPERY + TRAFFIC", new Vector3(0f, 1.8f, 33.2f), new Vector3(2.8f, 0.55f, 0.08f), materials.Danger, Color.white);
+        }
+
+        private void BuildHospitalModuleLights(Transform root, SceneMaterials materials, float zStart, float zEnd, int count)
+        {
+            if (count <= 0)
+            {
+                return;
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                var t = count == 1 ? 0f : (float)i / (count - 1);
+                var z = Mathf.Lerp(zStart, zEnd, t);
+                CreateCube($"Hospital Ceiling Module {i + 1}", root, new Vector3(0f, 2.75f, z), new Vector3(5.2f, 0.08f, 1.4f), materials.Metal);
+                CreateFloorStripe(root, $"Hospital Ceiling Light Strip {i + 1}", new Vector3(0f, 2.7f, z), new Vector3(1.4f, 0.02f, 0.18f), materials.Objective);
+            }
         }
 
         private void CreateAutoDoor(string name, Transform root, Vector3 panelPosition, float width, float height, float depth, float jamChance, Material material)
@@ -645,6 +816,17 @@ namespace MacaRush
             {
                 Debug.LogWarning($"Tag '{tagName}' nao existe. O prototipo funciona sem ela, mas voce pode cria-la no Tag Manager.");
             }
+        }
+
+        private struct LayoutSettings
+        {
+            public bool BuildHospital;
+            public bool BuildRouteChoice;
+            public bool BuildStreet;
+            public bool BuildAmbulance;
+            public Vector3 PlayerSpawn;
+            public Vector3 StretcherSpawn;
+            public string Objective;
         }
 
         private sealed class SceneMaterials
