@@ -4,55 +4,87 @@ namespace MacaRush
 {
     public sealed class SimpleFollowCamera : MonoBehaviour
     {
+        [Header("Target")]
         [SerializeField] private Transform target;
-        [SerializeField] private Vector3 pivotOffset = new Vector3(0f, 1.8f, 0f);
-        [SerializeField] private float distance = 5.2f;
-        [SerializeField] private float minPitch = -25f;
-        [SerializeField] private float maxPitch = 55f;
-        [SerializeField] private float mouseSensitivity = 2.2f;
-        [SerializeField] private float positionLerp = 12f;
-        [SerializeField] private float collisionRadius = 0.28f;
-        [SerializeField] private float collisionPadding = 0.2f;
+        [SerializeField] private Vector3 neckOffset = new Vector3(0f, 1.6f, 0f);
+
+        [Header("Orbit")]
+        [SerializeField] private float distance = 4.6f;
+        [SerializeField] private float minPitch = -30f;
+        [SerializeField] private float maxPitch = 62f;
+        [SerializeField] private float mouseSensitivity = 2.1f;
+
+        [Header("Smoothing")]
+        [SerializeField] private float positionSmooth = 0.08f;
+
+        [Header("Collision")]
+        [SerializeField] private float collisionRadius = 0.24f;
+        [SerializeField] private float collisionPadding = 0.16f;
         [SerializeField] private LayerMask collisionMask = ~0;
-        [SerializeField] private float forwardLookAhead = 1.6f;
-        [SerializeField] private float stretcherFrameWeight = 0.35f;
-        [SerializeField] private float maxStretcherFrameDistance = 5.5f;
+
+        [Header("Cursor")]
+        [SerializeField] private bool lockCursor = true;
 
         private float yaw;
-        private float pitch = 18f;
-        private bool hasSnappedToTarget;
+        private float pitch = 16f;
+        private Vector3 velocity;
+        private bool hasInitialized;
 
         private void Awake()
         {
             TryAcquireTarget();
+            SetCursorState(true);
+        }
+
+        private void OnDisable()
+        {
+            SetCursorState(false);
         }
 
         private void LateUpdate()
         {
             if (target == null && !TryAcquireTarget()) return;
 
+            if (lockCursor && Cursor.lockState != CursorLockMode.Locked)
+            {
+                SetCursorState(true);
+            }
+
             yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
             pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
-            var desiredPosition = CalculateDesiredPosition(out var pivot);
+            var pivot = target.position + neckOffset;
+            var rotation = Quaternion.Euler(pitch, yaw, 0f);
+            var idealPosition = pivot + rotation * new Vector3(0f, 0f, -distance);
+            var finalPosition = ResolveCollision(pivot, idealPosition);
 
-            transform.position = hasSnappedToTarget
-                ? Vector3.Lerp(transform.position, desiredPosition, positionLerp * Time.deltaTime)
-                : desiredPosition;
+            if (!hasInitialized)
+            {
+                transform.position = finalPosition;
+                hasInitialized = true;
+            }
+            else
+            {
+                transform.position = Vector3.SmoothDamp(
+                    transform.position,
+                    finalPosition,
+                    ref velocity,
+                    Mathf.Max(0.01f, positionSmooth));
+            }
+
             transform.rotation = Quaternion.LookRotation(pivot - transform.position, Vector3.up);
-            hasSnappedToTarget = true;
         }
 
         public void Configure(Transform followTarget)
         {
             target = followTarget;
-            hasSnappedToTarget = false;
-
             if (target != null)
             {
                 yaw = target.eulerAngles.y;
             }
+
+            hasInitialized = false;
         }
 
         private bool TryAcquireTarget()
@@ -64,41 +96,10 @@ namespace MacaRush
             return true;
         }
 
-        private Vector3 CalculateDesiredPosition(out Vector3 pivot)
+        private Vector3 ResolveCollision(Vector3 pivot, Vector3 desiredPosition)
         {
-            pivot = BuildPivot();
-            var rotation = Quaternion.Euler(pitch, yaw, 0f);
-            var desiredPosition = pivot + rotation * new Vector3(0f, 0f, -distance);
             var direction = desiredPosition - pivot;
-
-            if (TryFindCameraCollision(pivot, direction, out var hitDistance))
-            {
-                desiredPosition = pivot + direction.normalized * Mathf.Max(0.5f, hitDistance - collisionPadding);
-            }
-
-            return desiredPosition;
-        }
-
-        private Vector3 BuildPivot()
-        {
-            var basePivot = target.position + pivotOffset + target.forward * forwardLookAhead;
-
-            var stretcher = GameManager.Instance != null && GameManager.Instance.Stretcher != null
-                ? GameManager.Instance.Stretcher.transform
-                : null;
-
-            if (stretcher == null) return basePivot;
-
-            var distance = Vector3.Distance(target.position, stretcher.position);
-            if (distance > maxStretcherFrameDistance) return basePivot;
-
-            return Vector3.Lerp(basePivot, stretcher.position + Vector3.up * 0.8f, stretcherFrameWeight);
-        }
-
-        private bool TryFindCameraCollision(Vector3 pivot, Vector3 direction, out float hitDistance)
-        {
-            hitDistance = 0f;
-            if (direction.sqrMagnitude <= 0.001f) return false;
+            if (direction.sqrMagnitude < 0.0001f) return desiredPosition;
 
             var hits = Physics.SphereCastAll(
                 pivot,
@@ -119,10 +120,15 @@ namespace MacaRush
                 }
             }
 
-            if (closest == float.MaxValue) return false;
+            if (closest == float.MaxValue) return desiredPosition;
+            return pivot + direction.normalized * Mathf.Max(0.55f, closest - collisionPadding);
+        }
 
-            hitDistance = closest;
-            return true;
+        private void SetCursorState(bool locked)
+        {
+            if (!lockCursor) return;
+            Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !locked;
         }
     }
 }

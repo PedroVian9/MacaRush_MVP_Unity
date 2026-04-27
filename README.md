@@ -27,6 +27,7 @@ Maca Rush agora esta em formato single-player: voce controla um personagem em te
 
 - Mover: `WASD`
 - Correr: `Left Shift`
+- Segurar/soltar maca: `E`
 - Camera: mouse (`Mouse X` / `Mouse Y`)
 - Reiniciar apos vitoria/derrota: `R`
 

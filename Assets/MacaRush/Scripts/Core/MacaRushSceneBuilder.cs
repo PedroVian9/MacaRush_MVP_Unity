@@ -49,7 +49,7 @@ namespace MacaRush
 
             CreateEventDirector(root.transform, stretcher, sirenOverlay);
 
-            gameManager.SetObjective("Empurre a maca ate a ambulancia.");
+            gameManager.SetObjective("Segure com E e leve a maca ate a ambulancia.");
             Debug.Log("Maca Rush prototype scene created. Press Play to test the single-player third-person prototype.");
         }
 
@@ -322,8 +322,9 @@ namespace MacaRush
         {
             var cameraObject = new GameObject("Main Camera");
             cameraObject.transform.SetParent(root, false);
-            cameraObject.transform.position = new Vector3(0f, 13f, -9f);
-            cameraObject.transform.rotation = Quaternion.Euler(58f, 0f, 0f);
+            var startPivot = followTarget.position + new Vector3(0f, 1.6f, 0f);
+            cameraObject.transform.position = startPivot + Quaternion.Euler(16f, followTarget.eulerAngles.y, 0f) * new Vector3(0f, 0f, -4.6f);
+            cameraObject.transform.rotation = Quaternion.LookRotation(startPivot - cameraObject.transform.position, Vector3.up);
             var camera = cameraObject.AddComponent<Camera>();
             camera.tag = "MainCamera";
             camera.fieldOfView = 62f;

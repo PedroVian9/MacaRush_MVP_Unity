@@ -7,21 +7,33 @@ namespace MacaRush
     {
         [Header("Input")]
         [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
+        [SerializeField] private KeyCode grabKey = KeyCode.E;
 
         [Header("Movement")]
-        [SerializeField] private float moveForce = 52f;
-        [SerializeField] private float maxSpeed = 5f;
-        [SerializeField] private float sprintMultiplier = 1.35f;
+        [SerializeField] private float moveForce = 38f;
+        [SerializeField] private float maxSpeed = 3.8f;
+        [SerializeField] private float sprintMultiplier = 1.2f;
         [SerializeField] private float turnSpeed = 14f;
         [SerializeField] private float pushForce = 34f;
         [SerializeField] private float pushMassLimit = 40f;
+        [SerializeField] private float holdingMoveMultiplier = 0.82f;
 
         [Header("Stamina")]
         [SerializeField] private float maxStamina = 100f;
         [SerializeField] private float sprintDrainPerSecond = 20f;
+        [SerializeField] private float carryDrainPerSecond = 8f;
         [SerializeField] private float recoverPerSecond = 16f;
         [SerializeField] private float exhaustedThreshold = 12f;
         [SerializeField] private float exhaustedMoveMultiplier = 0.7f;
+
+        [Header("Grab Stretcher")]
+        [SerializeField] private float grabRadius = 2.1f;
+        [SerializeField] private float snapDistance = 1.1f;
+        [SerializeField] private float holdSlack = 0.45f;
+        [SerializeField] private float holdSpring = 880f;
+        [SerializeField] private float holdDamper = 74f;
+        [SerializeField] private float holdForce = 3200f;
+        [SerializeField] private float holdingDriveForce = 22f;
 
         [Header("Camera Relative")]
         [SerializeField] private Transform cameraPivot;
@@ -33,11 +45,15 @@ namespace MacaRush
         private float externalControlMultiplier = 1f;
         private float externalControlTimer;
         private float pushingTimer;
+        private ConfigurableJoint holdJoint;
+        private Rigidbody heldStretcherBody;
+        private MacaStretcher heldStretcher;
 
         public float Stamina01 => maxStamina <= 0f ? 0f : stamina / maxStamina;
         public Vector3 MoveDirection => worldInput;
         public float MoveAmount => Mathf.Clamp01(rawInput.magnitude);
-        public bool IsPushing => pushingTimer > 0f;
+        public bool IsPushing => pushingTimer > 0f || IsHolding;
+        public bool IsHolding => holdJoint != null && heldStretcherBody != null;
 
         private void Awake()
         {
@@ -47,8 +63,25 @@ namespace MacaRush
             stamina = maxStamina;
         }
 
+        private void OnDisable()
+        {
+            ReleaseStretcher();
+        }
+
         private void Update()
         {
+            if (Input.GetKeyDown(grabKey))
+            {
+                if (IsHolding)
+                {
+                    ReleaseStretcher();
+                }
+                else
+                {
+                    TryGrabNearestStretcher();
+                }
+            }
+
             ReadInput();
             UpdateStamina();
             UpdateExternalControl();
@@ -61,9 +94,15 @@ namespace MacaRush
 
             var sprint = IsSprinting() ? sprintMultiplier : 1f;
             var exhaustedScale = stamina > exhaustedThreshold ? 1f : exhaustedMoveMultiplier;
-            var finalScale = sprint * exhaustedScale * externalControlMultiplier;
+            var holdingScale = IsHolding ? holdingMoveMultiplier : 1f;
+            var finalScale = sprint * exhaustedScale * externalControlMultiplier * holdingScale;
 
             rb.AddForce(worldInput * (moveForce * finalScale), ForceMode.Acceleration);
+
+            if (IsHolding)
+            {
+                heldStretcherBody.AddForce(worldInput * (holdingDriveForce * finalScale), ForceMode.Acceleration);
+            }
 
             var flat = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
             var speedCap = maxSpeed * finalScale;
@@ -85,6 +124,7 @@ namespace MacaRush
             if (worldInput.sqrMagnitude < 0.05f) return;
             if (collision.rigidbody == null || collision.rigidbody.isKinematic) return;
             if (collision.rigidbody.mass > pushMassLimit) return;
+            if (IsHolding && collision.rigidbody == heldStretcherBody) return;
 
             collision.rigidbody.AddForce(worldInput * pushForce, ForceMode.Acceleration);
             pushingTimer = 0.15f;
@@ -99,6 +139,84 @@ namespace MacaRush
         {
             externalControlMultiplier = Mathf.Min(externalControlMultiplier, Mathf.Clamp01(multiplier));
             externalControlTimer = Mathf.Max(externalControlTimer, duration);
+        }
+
+        private void TryGrabNearestStretcher()
+        {
+            var stretchers = FindObjectsByType<MacaStretcher>(FindObjectsSortMode.None);
+            MacaStretcher best = null;
+            var bestDistance = float.MaxValue;
+
+            for (var i = 0; i < stretchers.Length; i++)
+            {
+                var candidate = stretchers[i];
+                if (candidate == null || candidate.Body == null) continue;
+
+                var distance = Vector3.Distance(transform.position, candidate.transform.position);
+                if (distance <= grabRadius && distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = candidate;
+                }
+            }
+
+            if (best == null) return;
+
+            var bestCollider = best.GetComponent<Collider>();
+            var anchorWorld = bestCollider != null ? bestCollider.ClosestPoint(transform.position) : best.transform.position;
+            var snapDirection = (anchorWorld - transform.position);
+            snapDirection.y = 0f;
+
+            if (snapDirection.sqrMagnitude > 0.0001f)
+            {
+                transform.position = anchorWorld - snapDirection.normalized * snapDistance + Vector3.up * 0.02f;
+            }
+
+            heldStretcher = best;
+            heldStretcherBody = best.Body;
+            CreateHoldJoint(anchorWorld);
+            pushingTimer = 0.2f;
+        }
+
+        private void CreateHoldJoint(Vector3 anchorWorld)
+        {
+            holdJoint = gameObject.AddComponent<ConfigurableJoint>();
+            holdJoint.connectedBody = heldStretcherBody;
+            holdJoint.autoConfigureConnectedAnchor = false;
+            holdJoint.anchor = Vector3.zero;
+            holdJoint.connectedAnchor = heldStretcherBody.transform.InverseTransformPoint(anchorWorld);
+            holdJoint.enableCollision = false;
+
+            holdJoint.xMotion = ConfigurableJointMotion.Limited;
+            holdJoint.yMotion = ConfigurableJointMotion.Limited;
+            holdJoint.zMotion = ConfigurableJointMotion.Limited;
+            holdJoint.angularXMotion = ConfigurableJointMotion.Locked;
+            holdJoint.angularYMotion = ConfigurableJointMotion.Locked;
+            holdJoint.angularZMotion = ConfigurableJointMotion.Locked;
+            holdJoint.linearLimit = new SoftJointLimit { limit = holdSlack };
+
+            var drive = new JointDrive
+            {
+                positionSpring = holdSpring,
+                positionDamper = holdDamper,
+                maximumForce = holdForce
+            };
+
+            holdJoint.xDrive = drive;
+            holdJoint.yDrive = drive;
+            holdJoint.zDrive = drive;
+        }
+
+        private void ReleaseStretcher()
+        {
+            if (holdJoint != null)
+            {
+                Destroy(holdJoint);
+            }
+
+            holdJoint = null;
+            heldStretcherBody = null;
+            heldStretcher = null;
         }
 
         private void ReadInput()
@@ -132,9 +250,20 @@ namespace MacaRush
 
         private void UpdateStamina()
         {
+            var draining = 0f;
             if (IsSprinting() && rawInput.sqrMagnitude > 0.01f)
             {
-                stamina = Mathf.Max(0f, stamina - sprintDrainPerSecond * Time.deltaTime);
+                draining += sprintDrainPerSecond;
+            }
+
+            if (IsHolding && rawInput.sqrMagnitude > 0.01f)
+            {
+                draining += carryDrainPerSecond;
+            }
+
+            if (draining > 0f)
+            {
+                stamina = Mathf.Max(0f, stamina - draining * Time.deltaTime);
             }
             else
             {
