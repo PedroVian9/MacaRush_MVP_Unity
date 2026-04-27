@@ -32,12 +32,14 @@ Maca Rush agora esta em formato single-player: voce controla um personagem em te
 
 ## 5. O que a cena gera automaticamente
 
-- 1 jogador em terceira pessoa.
-- 1 maca com paciente.
+- 1 jogador em terceira pessoa com corpo blocado, bracos, pernas, mascara e mochila medica.
+- 1 maca com frame, rodas, trilhos, colchao, paciente e alerta critico visual.
 - HUD com vida/estado/tempo/objetivo.
 - Mapa completo: hospital -> elevador/escada -> rua -> ambulancia.
-- Obstaculos fixos e moveis.
+- Cenario com paineis, placas, faixas de rota, marcacoes de perigo e zona final destacada.
+- Obstaculos fixos e moveis com cores por funcao.
 - Eventos aleatorios com dificuldade crescente.
+- FX leves de impacto, escorregao, alerta critico e sirene visual.
 
 ## 6. Objetivo e fim de partida
 
@@ -58,6 +60,7 @@ Derrota:
 - `GameManager`: `maxMatchTime`, `difficultyByProgress`.
 - `PatientHealth`: `passiveDrainPerSecond`.
 - `MacaStretcher`: `mass`, `impactDamageMultiplier`, `tiltDamagePerSecond`.
+- `SimpleFollowCamera`: distancia, sensibilidade, colisao e framing da maca.
 - `RandomEventDirector`: delays, intensidade e toggles de eventos.
 
 ## 8. Troubleshooting rapido

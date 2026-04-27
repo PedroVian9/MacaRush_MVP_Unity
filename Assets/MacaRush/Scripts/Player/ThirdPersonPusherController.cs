@@ -32,8 +32,12 @@ namespace MacaRush
         private float stamina;
         private float externalControlMultiplier = 1f;
         private float externalControlTimer;
+        private float pushingTimer;
 
         public float Stamina01 => maxStamina <= 0f ? 0f : stamina / maxStamina;
+        public Vector3 MoveDirection => worldInput;
+        public float MoveAmount => Mathf.Clamp01(rawInput.magnitude);
+        public bool IsPushing => pushingTimer > 0f;
 
         private void Awake()
         {
@@ -48,6 +52,7 @@ namespace MacaRush
             ReadInput();
             UpdateStamina();
             UpdateExternalControl();
+            pushingTimer = Mathf.Max(0f, pushingTimer - Time.deltaTime);
         }
 
         private void FixedUpdate()
@@ -82,6 +87,7 @@ namespace MacaRush
             if (collision.rigidbody.mass > pushMassLimit) return;
 
             collision.rigidbody.AddForce(worldInput * pushForce, ForceMode.Acceleration);
+            pushingTimer = 0.15f;
         }
 
         public void Configure(Transform pivot)

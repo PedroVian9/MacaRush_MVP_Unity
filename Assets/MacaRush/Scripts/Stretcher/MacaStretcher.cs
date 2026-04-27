@@ -21,6 +21,7 @@ namespace MacaRush
         [SerializeField] private float impactDamageMultiplier = 7.5f;
         [SerializeField] private float eventImpactCooldown = 0.45f;
         [SerializeField] private float impactDifficultyInfluence = 0.6f;
+        [SerializeField] private Material impactFxMaterial;
 
         [Header("Tilt Damage")]
         [SerializeField] private float dangerousTiltAngle = 35f;
@@ -89,6 +90,7 @@ namespace MacaRush
             var scaledImpact = impactDamageMultiplier * Mathf.Lerp(1f, difficulty, impactDifficultyInfluence);
             var damage = (impactVelocity - minimumImpactVelocity) * scaledImpact;
             patientHealth.ApplyDamage(damage, PatientDamageSource.Impact);
+            SpawnImpactFx(collision);
             impactCooldownTimer = eventImpactCooldown;
         }
 
@@ -96,6 +98,11 @@ namespace MacaRush
         {
             patientHealth = patient;
             patientAnchor = anchor;
+        }
+
+        public void ConfigureFx(Material impactMaterial)
+        {
+            impactFxMaterial = impactMaterial;
         }
 
         public void ApplyPatientMovementImpulse(float impulse, float damage)
@@ -205,6 +212,41 @@ namespace MacaRush
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.Defeat(reason);
+            }
+        }
+
+        private void SpawnImpactFx(Collision collision)
+        {
+            if (collision.contactCount <= 0) return;
+
+            var contact = collision.GetContact(0);
+            for (var i = 0; i < 4; i++)
+            {
+                var fx = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                fx.name = "Impact FX";
+                fx.transform.position = contact.point + Random.insideUnitSphere * 0.12f;
+                fx.transform.localScale = Vector3.one * Random.Range(0.08f, 0.16f);
+
+                var collider = fx.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    Destroy(collider);
+                }
+
+                var renderer = fx.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    if (impactFxMaterial != null)
+                    {
+                        renderer.material = impactFxMaterial;
+                    }
+                    else
+                    {
+                        renderer.material.color = new Color(1f, 0.72f, 0.16f, 0.9f);
+                    }
+                }
+
+                fx.AddComponent<TemporaryWorldFx>().Configure(0.5f, contact.normal * 0.8f + Vector3.up * 0.6f);
             }
         }
     }
