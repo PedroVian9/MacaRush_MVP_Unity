@@ -13,6 +13,12 @@ namespace MacaRush
 
     public sealed class MacaRushSceneBuilder : MonoBehaviour
     {
+        private const float IndoorWallHeight = 5.4f;
+        private const float IndoorWallCenterY = IndoorWallHeight * 0.5f;
+        private const float IndoorDividerHeight = 4.4f;
+        private const float IndoorDividerCenterY = IndoorDividerHeight * 0.5f;
+        private const float IndoorCeilingY = 5.1f;
+
         [Header("Build")]
         [SerializeField] private bool clearPreviousGeneratedScene = true;
         [SerializeField] private string generatedRootName = "MacaRush_PrototypeScene";
@@ -168,14 +174,14 @@ namespace MacaRush
         private void BuildHospital(Transform root, SceneMaterials materials)
         {
             CreateCube("Area 1 - Hospital Floor", root, new Vector3(0f, 0f, 6.5f), new Vector3(6f, 0.2f, 20f), materials.Floor);
-            CreateCube("Hospital Left Wall", root, new Vector3(-3.15f, 1.4f, 6.5f), new Vector3(0.25f, 2.8f, 20f), materials.Wall);
-            CreateCube("Hospital Right Wall", root, new Vector3(3.15f, 1.4f, 6.5f), new Vector3(0.25f, 2.8f, 20f), materials.Wall);
-            CreateCube("Hospital Start Back Wall", root, new Vector3(0f, 1.4f, -3f), new Vector3(6f, 2.8f, 0.25f), materials.Wall);
+            CreateCube("Hospital Left Wall", root, new Vector3(-3.15f, IndoorWallCenterY, 6.5f), new Vector3(0.25f, IndoorWallHeight, 20f), materials.Wall);
+            CreateCube("Hospital Right Wall", root, new Vector3(3.15f, IndoorWallCenterY, 6.5f), new Vector3(0.25f, IndoorWallHeight, 20f), materials.Wall);
+            CreateCube("Hospital Start Back Wall", root, new Vector3(0f, IndoorWallCenterY, -3f), new Vector3(6f, IndoorWallHeight, 0.25f), materials.Wall);
             for (var i = 0; i < 7; i++)
             {
                 var z = -1f + i * 2.7f;
-                CreateCube($"Hospital Left Wall Panel {i + 1}", root, new Vector3(-3.02f, 1.45f, z), new Vector3(0.04f, 1.45f, 1.35f), materials.Glass);
-                CreateCube($"Hospital Right Wall Panel {i + 1}", root, new Vector3(3.02f, 1.45f, z), new Vector3(0.04f, 1.45f, 1.35f), materials.Glass);
+                CreateBreakableGlassPanel($"Hospital Left Wall Panel {i + 1}", root, new Vector3(-3.02f, 1.45f, z), new Vector3(0.04f, 1.45f, 1.35f), materials.Glass, 3.2f, 6, 2.8f);
+                CreateBreakableGlassPanel($"Hospital Right Wall Panel {i + 1}", root, new Vector3(3.02f, 1.45f, z), new Vector3(0.04f, 1.45f, 1.35f), materials.Glass, 3.2f, 6, 2.8f);
             }
             CreateFloorStripe(root, "Hospital Center Guide", new Vector3(0f, 0.12f, 6.5f), new Vector3(0.12f, 0.03f, 18f), materials.FloorStripe);
             CreateArrowMarker(root, "Hospital Direction Arrow", new Vector3(0f, 0.14f, 1.2f), 0.9f, 1.1f, materials.Objective);
@@ -201,17 +207,17 @@ namespace MacaRush
             createdMovingObstacles.Add(eventCartMover);
 
             CreateAutoDoor("Hospital Auto Door", root, new Vector3(0f, 1.25f, 14.2f), 5.2f, 2.5f, 0.2f, 0.18f, materials.Door);
-            CreateCube("Auto Door Glass Left", root, new Vector3(-1.75f, 1.25f, 14.05f), new Vector3(1.1f, 1.7f, 0.06f), materials.Glass);
-            CreateCube("Auto Door Glass Right", root, new Vector3(1.75f, 1.25f, 14.05f), new Vector3(1.1f, 1.7f, 0.06f), materials.Glass);
+            CreateBreakableGlassPanel("Auto Door Glass Left", root, new Vector3(-1.75f, 1.25f, 14.05f), new Vector3(1.1f, 1.7f, 0.06f), materials.Glass, 4.2f, 8, 3.6f);
+            CreateBreakableGlassPanel("Auto Door Glass Right", root, new Vector3(1.75f, 1.25f, 14.05f), new Vector3(1.1f, 1.7f, 0.06f), materials.Glass, 4.2f, 8, 3.6f);
             CreateObjectiveZone("Objective - Route Choice", root, new Vector3(0f, 1f, 16f), new Vector3(6f, 2f, 0.5f), "Escolha: elevador instavel ou escada rapida.");
         }
 
         private void BuildRouteChoice(Transform root, SceneMaterials materials)
         {
             CreateCube("Area 2 - Route Floor", root, new Vector3(0f, 0f, 23.2f), new Vector3(9.2f, 0.2f, 13.5f), materials.Floor);
-            CreateCube("Route Left Wall", root, new Vector3(-4.75f, 1.4f, 23.2f), new Vector3(0.25f, 2.8f, 13.5f), materials.Wall);
-            CreateCube("Route Right Wall", root, new Vector3(4.75f, 1.4f, 23.2f), new Vector3(0.25f, 2.8f, 13.5f), materials.Wall);
-            CreateCube("Route Divider", root, new Vector3(0f, 0.8f, 23.2f), new Vector3(0.22f, 1.6f, 10.5f), materials.Wall);
+            CreateCube("Route Left Wall", root, new Vector3(-4.75f, IndoorWallCenterY, 23.2f), new Vector3(0.25f, IndoorWallHeight, 13.5f), materials.Wall);
+            CreateCube("Route Right Wall", root, new Vector3(4.75f, IndoorWallCenterY, 23.2f), new Vector3(0.25f, IndoorWallHeight, 13.5f), materials.Wall);
+            CreateCube("Route Divider", root, new Vector3(0f, IndoorDividerCenterY, 23.2f), new Vector3(0.22f, IndoorDividerHeight, 10.5f), materials.Wall);
             CreateFloorStripe(root, "Elevator Lane Stripe", new Vector3(-2.35f, 0.12f, 23.4f), new Vector3(0.12f, 0.03f, 9.8f), materials.Objective);
             CreateFloorStripe(root, "Stair Lane Stripe", new Vector3(2.35f, 0.12f, 23.4f), new Vector3(0.12f, 0.03f, 9.8f), materials.FloorStripe);
             CreateSign(root, "Elevator Route Sign", "ELEVATOR\nSAFER / SLOWER", new Vector3(-2.35f, 2.3f, 18.7f), new Vector3(2.7f, 0.85f, 0.08f), materials.Objective, Color.black);
@@ -283,7 +289,7 @@ namespace MacaRush
             CreateCube("Area 4 - Ambulance Bay", root, new Vector3(0f, -0.55f, 58f), new Vector3(12f, 0.2f, 7f), materials.Floor);
             CreateCube("Ambulance Body", root, new Vector3(0f, 0.6f, 61.8f), new Vector3(4.4f, 2.2f, 3.1f), materials.Ambulance);
             CreateCube("Ambulance Red Stripe", root, new Vector3(0f, 0.98f, 60.18f), new Vector3(4.2f, 0.18f, 0.08f), materials.Danger);
-            CreateCube("Ambulance Window", root, new Vector3(0f, 1.45f, 60.12f), new Vector3(2.4f, 0.55f, 0.08f), materials.Glass);
+            CreateBreakableGlassPanel("Ambulance Window", root, new Vector3(0f, 1.45f, 60.12f), new Vector3(2.4f, 0.55f, 0.08f), materials.Glass, 4.8f, 10, 4f);
             CreateCube("Ambulance Door Left", root, new Vector3(-1.15f, 0.75f, 60.15f), new Vector3(1.8f, 1.7f, 0.12f), materials.Door);
             CreateCube("Ambulance Door Right", root, new Vector3(1.15f, 0.75f, 60.15f), new Vector3(1.8f, 1.7f, 0.12f), materials.Door);
             CreateSign(root, "Ambulance Finish Sign", "LOAD PATIENT", new Vector3(0f, 2.4f, 58.5f), new Vector3(2.9f, 0.55f, 0.08f), materials.Objective, Color.black);
@@ -530,9 +536,9 @@ namespace MacaRush
         private void BuildHospitalFinish(Transform root, SceneMaterials materials)
         {
             CreateCube("Hospital Finish Floor", root, new Vector3(0f, 0f, 18f), new Vector3(6f, 0.2f, 5f), materials.Floor);
-            CreateCube("Hospital Finish Left Wall", root, new Vector3(-3.15f, 1.4f, 18f), new Vector3(0.25f, 2.8f, 5f), materials.Wall);
-            CreateCube("Hospital Finish Right Wall", root, new Vector3(3.15f, 1.4f, 18f), new Vector3(0.25f, 2.8f, 5f), materials.Wall);
-            CreateCube("Hospital Finish Back Wall", root, new Vector3(0f, 1.4f, 20.5f), new Vector3(6f, 2.8f, 0.25f), materials.Wall);
+            CreateCube("Hospital Finish Left Wall", root, new Vector3(-3.15f, IndoorWallCenterY, 18f), new Vector3(0.25f, IndoorWallHeight, 5f), materials.Wall);
+            CreateCube("Hospital Finish Right Wall", root, new Vector3(3.15f, IndoorWallCenterY, 18f), new Vector3(0.25f, IndoorWallHeight, 5f), materials.Wall);
+            CreateCube("Hospital Finish Back Wall", root, new Vector3(0f, IndoorWallCenterY, 20.5f), new Vector3(6f, IndoorWallHeight, 0.25f), materials.Wall);
             CreateSign(root, "Hospital Sprint Sign", "TRIAGE LOAD ZONE", new Vector3(0f, 2.25f, 19.4f), new Vector3(2.8f, 0.5f, 0.08f), materials.Objective, Color.black);
 
             var finish = CreateCube("Finish Zone - Triage", root, new Vector3(0f, 0.3f, 18.6f), new Vector3(4.5f, 1.2f, 2.1f), materials.Finish);
@@ -587,8 +593,8 @@ namespace MacaRush
             {
                 var t = count == 1 ? 0f : (float)i / (count - 1);
                 var z = Mathf.Lerp(zStart, zEnd, t);
-                CreateCube($"Hospital Ceiling Module {i + 1}", root, new Vector3(0f, 2.75f, z), new Vector3(5.2f, 0.08f, 1.4f), materials.Metal);
-                CreateFloorStripe(root, $"Hospital Ceiling Light Strip {i + 1}", new Vector3(0f, 2.7f, z), new Vector3(1.4f, 0.02f, 0.18f), materials.Objective);
+                CreateCube($"Hospital Ceiling Module {i + 1}", root, new Vector3(0f, IndoorCeilingY, z), new Vector3(5.2f, 0.08f, 1.4f), materials.Metal);
+                CreateFloorStripe(root, $"Hospital Ceiling Light Strip {i + 1}", new Vector3(0f, IndoorCeilingY - 0.05f, z), new Vector3(1.4f, 0.02f, 0.18f), materials.Objective);
             }
         }
 
@@ -611,6 +617,21 @@ namespace MacaRush
             var rb = pushable.AddComponent<Rigidbody>();
             rb.mass = mass;
             rb.interpolation = RigidbodyInterpolation.Interpolate;
+        }
+
+        private void CreateBreakableGlassPanel(
+            string name,
+            Transform root,
+            Vector3 position,
+            Vector3 scale,
+            Material material,
+            float impactThreshold,
+            int shardCount,
+            float shardImpulse)
+        {
+            var glass = CreateCube(name, root, position, scale, material);
+            var breakable = glass.AddComponent<BreakableGlass>();
+            breakable.Configure(impactThreshold, shardCount, shardImpulse);
         }
 
         private void CreateWheel(Transform parent, string name, Vector3 localPosition, Material material)
